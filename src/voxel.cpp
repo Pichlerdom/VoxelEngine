@@ -10,7 +10,12 @@ bool Voxel::is_active(){
 }
 
 void Voxel::set_active(bool active){
-  flags |= VOXELFLAG_ACTIVE;
+  if(active){
+    flags |= VOXELFLAG_ACTIVE;  
+  }else{
+    flags &= ~VOXELFLAG_ACTIVE;
+  }
+  
 }
 
 Voxel::VoxelType Voxel::get_type(){

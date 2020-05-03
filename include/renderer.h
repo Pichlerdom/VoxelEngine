@@ -15,37 +15,50 @@
 
 #include "shader.h"
 #include "model.h"
-
+#include "mesh.h"
 
 class Renderer{
  public:
-  Renderer(uint32_t window_width, uint32_t window_height);
+  Renderer(uint32_t window_width,
+	   uint32_t window_height);
   bool init();
 
-  bool set_up_shader(const std::string vertex, const std::string fragment);
+  bool set_up_shader(const std::string vertex,
+		     const std::string fragment);
+
+  void push_matrix(glm::mat4 mat);
+  void pop_matrix();
+
+  void set_light(glm::vec3 light_pos);
   
   void render_start();
-  void render_model(const Model &model);
+  void render_model(const Model *model);
+  void render_mesh(const Mesh *mesh);
   void render_end();
   
-  glm::mat4 get_matrix();
-  void set_matrix(const glm::mat4 &model);
-  void set_shader(Model &model);
-
+  bool in_frustum();
+  
   void cleanup();
   void check_SDL_error(int line);
   
  private:
+
   uint32_t m_window_width;
   uint32_t m_window_height;
   
   glm::mat4 projection;
   glm::mat4 view;
+  glm::mat4 model;
+  glm::mat4 mvp;
 
+  std::vector<glm::mat4> model_stack;
+  
   SDL_Window *main_window;
   SDL_GLContext main_context;
 
   Shader shader;
+  
+  void set_matrix();
 
   void set_gl_options();
   bool set_gl_attributes();

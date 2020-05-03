@@ -13,11 +13,13 @@ class Voxel{
 public:
   enum VoxelType{
 		 VOXELTYPE_DEFAULT = 0,
-
+		 VOXELTYPE_BLUE,
+		 VOXELTYPE_RED,
 		 VOXELTYPE_TEST,
 	       
 		 VOXELTYPE_NUMTYPES,
   };
+  
   void init();
   bool is_active();
   void set_active(bool active);

@@ -1,60 +1,54 @@
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+
+#include <pthread.h>
 
 #include "math_utils.h"
 #include "renderer.h"
 #include "event_handler.h"
 #include "chunk_manager.h"
+#include "timer.h"
+#include "game_of_live.h"
 
-#define WINDOW_WIDTH 640
-#define WINDOW_HEIGHT 480
+#define WINDOW_WIDTH 1280
+#define WINDOW_HEIGHT 720
 
-#define FPS 60
-#define MS_PER_FRAME 1000/FPS
+#define SPEED glm::vec3(5.0f)
+
+#define _DEBUG_
+
 
 EventHandler handler;
 
 Renderer renderer(WINDOW_WIDTH, WINDOW_HEIGHT);
 
 ChunkManager chunk_manager(&renderer);
-glm::vec3 position(1.0f);
 
+GameOfLive * game_of_live = new GameOfLive(&chunk_manager);
+
+glm::vec3 position(16.0f,16.0f,-1.0f);
+glm::vec3 light_pos(100.0f, 100.0f, 50.0f);
+
+Timer *timer_voxel = new Timer();
+Timer *timer_game = new Timer();
+
+double tick_rate = 1000.0/1.0;
+
+uint32_t rule = 0x00000000;
+uint64_t count = 0;
 void print_commands();
 void update_model();
 
 void render(){
-
-  uint32_t start_time = SDL_GetTicks();
+  
   renderer.render_start();
-  
-  glm::mat4 mvp = renderer.get_matrix();
 
-  chunk_manager.render(mvp);
-  
-  /*glm::mat4 model = cube.get_model();
-    
-  for (int x = 0; x < 32; x++){
-    for (int y = 0; y < 32; y++){
-      for (int z = 0; z < 32; z++){
-	glm::vec3 axis(0.0f);
-	axis.x = x;
-	axis.y = y;
-	axis.z = z;
-	renderer.set_matrix( model * glm::translate(glm::mat4(1.f),axis) );
-	renderer.render_model(cube);
-      }
-    }
-    }*/
-
+  chunk_manager.render();
   
   renderer.render_end();
-  int delta_time = SDL_GetTicks() - start_time;
-  printf("%d: %d\n ", delta_time, MS_PER_FRAME);
   
-  if(delta_time < MS_PER_FRAME){
-    SDL_Delay(MS_PER_FRAME - delta_time);
-  }  
 }
 
 void update(){
@@ -67,42 +61,106 @@ void update(){
     render();
   }
 }
-
 void update_model(){
   glm::vec3 axis = Math::GetAxis(handler);
   
-  if(handler.IsKeyDown(SDLK_r)){
-    position.x = 0;
-    position.y = 0;
-    position.z = 0;
-    chunk_manager.update(0, position);
-  }else{  
-    chunk_manager.update(0, position);
-    printf("%f,%f,%f\n",position.x,position.y,position.z);
+  double delta_time = timer_voxel->tick();
 
+#ifdef _DEBUG_
+  printf("%.4lfms\n%.2f,%.2f,%.2f, rule:%d, ms_per_tick: %.2f\n", delta_time, position.x, position.y, position.z,rule,tick_rate);
+#endif
+  if(axis != glm::vec3(0.0f,0.0f,0.0f)){
+    axis = glm::normalize(axis) * SPEED;
+  
+    axis.x *= ((float)delta_time)/1000.0f;
+    axis.y *= ((float)delta_time)/1000.0f;
+    axis.z *= ((float)delta_time)/1000.0f;
+  }
+  
+  if(handler.IsKeyDown(SDLK_r)){
+    position.x = 16;
+    position.y = 16;
+    position.z = -1;
+    game_of_live->reset();
+  }else{  
     position += axis;
   }
+  count ++;
+  if(count % 2 == 0){
+    if(handler.IsKeyDown(SDLK_t)){
+      rule+=2;
+    }else if(handler.IsKeyDown(SDLK_g)){
+      rule-=2;
+    }
+  
+    if(handler.IsKeyDown(SDLK_z)){
+      rule+=16;
+    }else if(handler.IsKeyDown(SDLK_h)){
+      rule-=16;
+    }
+  }
+  if(handler.IsKeyDown(SDLK_c)){
+    tick_rate -= 10.0;
+  }else if(handler.IsKeyDown(SDLK_v)){
+    tick_rate += 10.0;
+  }
+
+  if(handler.IsKeyDown(SDLK_y)){
+    tick_rate --;
+  }else if(handler.IsKeyDown(SDLK_x)){
+    tick_rate ++;
+  }
+  if(tick_rate < 0)
+    tick_rate = 1;
+  
+  chunk_manager.update(delta_time, position);
 }
 
+void * game_update_loop(void * args){
+  double dt = 0;
+  //  SDL_Delay(2000.0);
+  timer_game->start();  
+  
+  while(!handler.WasQuit()){
+    game_of_live->update(dt,rule);
+    dt = timer_game->tick();
+    if(dt < tick_rate)
+      SDL_Delay(tick_rate - dt);
+  }
 
+  game_of_live->cleanup();
+  return NULL;
+}
 
-int main(void){
+int main(int argc, char* argv[]){
+  if(argc == 2){
+    rule = std::stoi(argv[1]); 
+  }
+  //setup game thread
+  pthread_t game_thread;
+  pthread_create(&game_thread, NULL, game_update_loop, NULL);
+  
+  
+  //setup voxel engine
   if(!renderer.init())
     return -1;
 
-  if(!renderer.set_up_shader("simple.vert", "simple.frag"))
+  if(!renderer.set_up_shader("flat.vert", "flat.frag"))
     printf("Shader setup failed somehow!!");
-  
-  position.x = 2000;
-  position.y = 2000;
-  position.z = 2000;
-  
+
+  renderer.set_light(light_pos);
+
+  timer_voxel->start();
+  //start updating voxel engine 
   update();
 
+
+  pthread_join(game_thread,NULL);
   renderer.cleanup();
 
-  return 0;
-  
+  delete timer_voxel;
+
+  return 0;  
 }
 
 

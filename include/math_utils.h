@@ -8,24 +8,24 @@ class Math
   static glm::vec3 GetAxis(const EventHandler &handler)
   {
     glm::vec3 axis(0.0f);
-
+    
     if (handler.IsKeyDown(SDLK_UP))
-      axis.y = -0.1f;
+      axis.y = -1.0f;
 
     if (handler.IsKeyDown(SDLK_DOWN))
-      axis.y = 0.1f;
+      axis.y = 1.0f;
 
     if (handler.IsKeyDown(SDLK_LEFT))
-      axis.x = -0.1f;
+      axis.x = -1.0f;
 
     if (handler.IsKeyDown(SDLK_RIGHT))
-      axis.x = 0.1f;
+      axis.x = 1.0f;
 
     if (handler.IsKeyDown(SDLK_w))
-      axis.z = -0.1f;
+      axis.z = -1.0f;
 
     if (handler.IsKeyDown(SDLK_s))
-      axis.z = 0.1f;
+      axis.z = 1.0f;
 
     return axis;
   }

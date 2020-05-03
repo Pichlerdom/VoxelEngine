@@ -13,7 +13,7 @@
 
 #define POS_ATTR_MESH 0
 #define COLOR_ATTR_MESH 1 
-#define INDEX_ATTR_MESH 2
+#define NORMAL_ATTR_MESH 2
 
 
 class Mesh{
@@ -29,7 +29,6 @@ public:
   //sets the model matrix uniform
   void set_matrix(glm::mat4 mvp);
 
-  //renders the model using the shader set by set_shader(Shader _shader);
   void render() const;
 
   //sets the model matrix to the identity matrix
@@ -42,32 +41,28 @@ public:
 
   void add_triangle(int v1, int v2, int v3);
 
+  void add_normal(GLfloat x, GLfloat y, GLfloat z);
+  
   unsigned int add_color(GLfloat r, GLfloat g, GLfloat b, GLfloat alpha);
 
   void finish_mesh();
 
   void reset();
   
-  void set_shader(Shader _shader);
-
   bool was_finished();
+
 private:
   bool m_was_finished;
   int num_triangles;
   
   std::vector<GLfloat> *positions;
   std::vector<GLfloat> *colors;
-  std::vector<unsigned int> *indices;
- 
-  GLuint vbo[3], vao[1];
+  std::vector<GLfloat> *normals;
+  std::vector<GLushort> *indices;
   
-  glm::mat4 model;
-  
-  Shader shader;
-  
-  
+  GLuint vbo[3], vao[1], ibo[1];
+
+  void clear_gl_buffers();  
 };
-
-
 
 #endif

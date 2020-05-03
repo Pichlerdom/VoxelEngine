@@ -1,7 +1,9 @@
 #include"shader.h"
 
 Shader::Shader(){
-  matrix_id_set = false;
+  mvp_matrix_id_set = false;
+  normal_matrix_id_set = false;
+  light_id_set = false;
 }
     
 void Shader::use_program() const {
@@ -17,15 +19,42 @@ bool Shader::init(){
   return true;
 }
 
+void Shader::set_light(const glm::vec3 light_pos){
+  if(!light_id_set){
+    light_id = glGetUniformLocation(shaderProgram, "light_pos");
+    light_id_set = true;
+  }
+  glUniform3f(light_id,
+	       light_pos.x,
+	       light_pos.y,
+	       light_pos.z);
+}
 
-void Shader::set_matrix(const glm::mat4 mat){
-  if(!matrix_id_set){
-    matrix_id = glGetUniformLocation(shaderProgram, "mvp");
-    matrix_id_set = true;
+void Shader::set_mvp_matrix(const glm::mat4 model,
+			    const glm::mat4 view,
+			    const glm::mat4 projection){
+  if(!mvp_matrix_id_set){
+    model_matrix_id = glGetUniformLocation(shaderProgram, "model");
+    view_matrix_id = glGetUniformLocation(shaderProgram, "view");
+    projection_matrix_id = glGetUniformLocation(shaderProgram, "projection");
+    mvp_matrix_id_set = true;
   }
 
-  glUniformMatrix4fv(matrix_id, 1, GL_FALSE, &mat[0][0]);
+  glUniformMatrix4fv(model_matrix_id, 1, GL_FALSE, &model[0][0]);
+  glUniformMatrix4fv(view_matrix_id, 1, GL_FALSE, &view[0][0]);
+  glUniformMatrix4fv(projection_matrix_id, 1, GL_FALSE, &projection[0][0]);
+  
 }
+
+void Shader::set_normal_matrix(const glm::mat4 mat){
+  if(!normal_matrix_id_set){
+    normal_matrix_id = glGetUniformLocation(shaderProgram, "normal_mat");
+    normal_matrix_id_set = true;
+  }
+
+  glUniformMatrix4fv(normal_matrix_id, 1, GL_FALSE, &mat[0][0]);
+}
+
 
 
 bool Shader::load_shader(const std::string &filename, GLenum shader_type){

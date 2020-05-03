@@ -8,8 +8,8 @@ Renderer::Renderer(uint32_t window_width, uint32_t window_height){
   projection = glm::perspective(
      90.0f,      //fov
      1.0f,//(float)window_width/(float)window_height1,  //Aspect ratio
-     0.1f,       //near clipping plane
-     100.0f      //far clipping plane
+     0.01f,       //near clipping plane
+     64.0f      //far clipping plane
      );
 
   m_window_width = window_width;
@@ -17,11 +17,13 @@ Renderer::Renderer(uint32_t window_width, uint32_t window_height){
   
   //view matrix
   view = glm::lookAt(
-     glm::vec3(0,0,-4), //camera position
-     glm::vec3(0,0,0),  //look at position
+     glm::vec3(0, 0, 0), //camera position
+     glm::vec3(0,0, 1),  //look at position
      glm::vec3(0,-1,0)  //up vector
      );
-  
+
+  model = glm::mat4(1.0f);
+  mvp = projection * view;
 }
 
 bool Renderer::init(){
@@ -83,34 +85,64 @@ void Renderer::render_start(){
   glClear(GL_COLOR_BUFFER_BIT| GL_DEPTH_BUFFER_BIT);
 }
 
-void Renderer::render_model(const Model &model){
-  model.render();
+void Renderer::render_model(const Model *model){
+  shader.use_program();
+  model->render();
+}
+
+void Renderer::render_mesh(const Mesh *mesh){
+  shader.use_program();
+  mesh->render();
 }
 
 void Renderer::render_end(){
   SDL_GL_SwapWindow(main_window);
 }
 
-glm::mat4 Renderer::get_matrix(){
-  return projection * view;
+void Renderer::push_matrix(glm::mat4 mat){
+  model_stack.push_back(mat);
+  model *= mat;
+  set_matrix();
 }
 
-void Renderer::set_matrix(const glm::mat4 &model){
-  glm::mat4 mvp = projection * view * model;
-  shader.set_matrix( mvp );  
+void Renderer::pop_matrix(){
+  model *= glm::inverse(model_stack.back());
+  model_stack.pop_back();
+  set_matrix();
 }
 
-void Renderer::set_shader(Model &model){
-  model.set_shader(shader);
+void Renderer::set_matrix(){
+  shader.use_program();
+  shader.set_mvp_matrix(model, view, projection);
+
+  glm::mat4 normal_mat = glm::transpose(glm::inverse(view * model));
+  shader.set_normal_matrix(normal_mat);
+}
+
+void Renderer::set_light(glm::vec3 light_pos){
+  shader.use_program();
+  shader.set_light( light_pos );
+}
+
+
+bool Renderer::in_frustum(){
+  glm::vec4 Pclip = projection * view * model * glm::vec4(0.0f,0.0f,2.0f,1.0f);
+  return (glm::abs(Pclip.x) < Pclip.w &&
+	  glm::abs(Pclip.y) < Pclip.w &&
+	  0 < Pclip.z &&
+	  Pclip.z < Pclip.w);			   
 }
 
 void Renderer::cleanup(){
+  model_stack.clear();
+  model_stack.shrink_to_fit();
+  
   shader.cleanup();
 
   SDL_GL_DeleteContext(main_context);
 
   SDL_DestroyWindow(main_window);
-
+  
   SDL_Quit();
 }
 

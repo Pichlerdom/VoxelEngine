@@ -10,8 +10,8 @@ glm::mat4 Model::get_model(){
   
 void Model::set_matrix(glm::mat4 mvp){
   shader.use_program();
-  shader.set_matrix(mvp);
-}
+  //shader.set_mvp_matrix(mvp);
+  }
 
 void Model::render() const {
   shader.use_program();

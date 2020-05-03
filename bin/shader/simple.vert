@@ -12,9 +12,9 @@ out vec4 ex_Color;
 
 void main(void) {
 	// Set the position to the one defined in our vertex array
-	vec4 pos = vec4(in_Position, 1.0f);
 	
-	gl_Position = mvp * pos;
+	
+	gl_Position = mvp * vec4(in_Position, 1.0);
 
 	// Pass the color on to the fragment shader
 	ex_Color = in_Color;

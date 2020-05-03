@@ -9,10 +9,10 @@ TARGET_DIR = ../bin
 CC = g++
 
 #C Flags
-CFLAGS =-g -Wall $(SDL2CFLAGS)
+CFLAGS =-g -O2 -Wall $(SDL2CFLAGS)
 
 #define library names
-LIBS = -lSDL2 -lSDL2_ttf -lm -lGL -lGLEW -lpthread 
+LIBS = -lSDL2  -lm -lGL -lGLEW -lpthread 
 
 #define library paths
 LFLAGS = -L"/usr/lib/x86_64-linux-gnu" 
@@ -36,6 +36,7 @@ MAIN = $(TARGET_DIR)/$(TARGET_NAME)
 
 
 all: $(MAIN)
+
 
 $(MAIN): $(OBJ)
 	$(CC) $(CFLAGS) -o $@ $(OBJ) $(INCLUDES) $(LFLAGS) $(LIBS)
