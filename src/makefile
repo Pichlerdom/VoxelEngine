@@ -9,7 +9,7 @@ TARGET_DIR = ../bin
 CC = g++
 
 #C Flags
-CFLAGS =-g -O2 -Wall $(SDL2CFLAGS)
+CFLAGS =-Wall $(SDL2CFLAGS)
 
 #define library names
 LIBS = -lSDL2  -lm -lGL -lGLEW -lpthread 
@@ -34,9 +34,11 @@ MAIN = $(TARGET_DIR)/$(TARGET_NAME)
 
 .SUFFIXES : .cpp .o
 
+debug: CFLAGS += -g
+debug: $(MAIN) clean
 
-all: $(MAIN)
-
+release: CFLAGS += -O2
+release: $(MAIN) clean
 
 $(MAIN): $(OBJ)
 	$(CC) $(CFLAGS) -o $@ $(OBJ) $(INCLUDES) $(LFLAGS) $(LIBS)
@@ -44,5 +46,5 @@ $(MAIN): $(OBJ)
 $(ODIR)/%.o:%.cpp
 	$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
 
-clean:
+clean: $(MAIN)
 	rm $(OBJ)

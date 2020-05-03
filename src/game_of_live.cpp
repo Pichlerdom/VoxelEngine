@@ -24,7 +24,7 @@ void GameOfLive::init_chunks(){
     
     for(int voxel_i = 0; voxel_i < CHUNK_DATA_SIZE; voxel_i++){
       curr_voxel = &curr_chunk->voxels[0][0][0] + voxel_i;
-      
+      curr_voxel->set_active(false);
     }
   }
   
