@@ -18,17 +18,9 @@ void Chunk::cleanup(){
 }
 
 void Chunk::update(){
-  //  m_should_unload = true;
   m_is_setup = false;
-  //m_empty_chunk = false;
 }
 
-void Chunk::update_mesh(){
-  mesh->reset();  
-  generate_mesh();
-  m_mesh_updated = true;
-  m_has_mesh = true;
-}
 
 bool Chunk::is_mesh_updated(){
   return m_mesh_updated;
@@ -175,6 +167,148 @@ Voxel* Chunk::get_voxel(int x, int y, int z){
   return m_voxels + CHUNK_SIZE * CHUNK_SIZE * z + CHUNK_SIZE * y + x;
 }
 
+void Chunk::update_mesh(){
+  mesh->reset();  
+  generate_mesh();
+  m_mesh_updated = true;
+  m_has_mesh = true;
+}
+
+void Chunk::generate_mesh(){
+  float voxel_size = 1.0/CHUNK_SIZE;  
+  int *temp_prev;
+  
+  int *prev_x[2];
+  prev_x[0] = (int *) calloc((CHUNK_SIZE + 1) * (CHUNK_SIZE + 1), sizeof(int));
+  prev_x[1] = (int *) calloc((CHUNK_SIZE + 1) * (CHUNK_SIZE + 1), sizeof(int));
+  for(int i = 0 ; i < 2; i++){
+    for(int x; x < CHUNK_SIZE + 1; x++){
+      for(int y; y < CHUNK_SIZE + 1; y++){
+	prev_x[i][y] = -1;
+      }
+    }
+  }
+  
+  int *prev_y[2];
+  prev_y[0] = (int *) calloc(CHUNK_SIZE + 1, sizeof(int));
+  prev_y[1] = (int *) calloc(CHUNK_SIZE + 1, sizeof(int));
+  for(int i = 0 ; i < 2; i++){
+    for(int y = 0; y < CHUNK_SIZE + 1; y++){
+      prev_y[i][y] = -1;
+    }
+  }
+  
+  int prev_z = -1;
+
+  int idx = -1;
+  const int8_t * normal_idx;
+  uint8_t adj = 0;
+  const GLfloat * normal;
+  
+  for(int x = 0; x < CHUNK_SIZE; x++){  
+    for(int y = 0; y < CHUNK_SIZE; y++){
+      for(int z = 0; z < CHUNK_SIZE; z++){
+	adj = get_adj_voxels(x,y,z);
+	idx = -1;
+	
+	if(adj == 0 || adj == 255){                           //all active or all not active -> no vertex
+	  prev_x[BACK][(y + 1) * (CHUNK_SIZE + 1) + z + 1] = -1;
+	  prev_y[BACK][z + 1] = -1;
+	  prev_z = -1;
+	  continue;
+	}
+	
+        idx = mesh->add_vertex(((float)x * voxel_size),  //add vertex
+			       ((float)y * voxel_size),
+			       ((float)z * voxel_size));
+	mesh->add_color(1.0, 0.0, 0.0, 1.0);
+
+	normal_idx = normal_idx_table + adj;
+	normal = normal_lookup_table[*normal_idx];
+	mesh->add_normal(normal[0], normal[1], normal[2]);
+	
+	if(((adj & NX_NY_NZ) != 0) !=
+	   ((adj & PX_NY_NZ) != 0)){ //X PLANE
+	  mesh->add_triangle(idx,
+			     prev_y[FRONT][z],
+			     prev_y[FRONT][z + 1]);
+	  mesh->add_triangle(idx,
+			     prev_y[FRONT][z],
+			     prev_z);
+	}
+	
+	if(((adj & NX_NY_NZ) != 0) != 
+	   ((adj & NX_PY_NZ) != 0)){ //Y PLANE
+	  mesh->add_triangle(idx,
+			     prev_x[FRONT][(y + 1) * (CHUNK_SIZE + 1) + z],
+			     prev_z);
+	  mesh->add_triangle(idx,
+			     prev_x[FRONT][(y + 1) * (CHUNK_SIZE + 1) + z],
+			     prev_x[FRONT][(y + 1) * (CHUNK_SIZE + 1) + z + 1]);
+	  
+	}
+	
+	if(((adj & NX_NY_NZ) != 0) != 
+	   ((adj & NX_NY_PZ) != 0)){ //Z PLANE
+	  mesh->add_triangle(idx,
+			     prev_x[FRONT][(y + 1) * (CHUNK_SIZE + 1) + z + 1],
+			     prev_x[FRONT][y * (CHUNK_SIZE + 1) + z + 1]);
+	  mesh->add_triangle(idx,
+			     prev_y[FRONT][z + 1],
+			     prev_x[FRONT][y * (CHUNK_SIZE + 1) + z + 1]);
+	}
+	   
+	prev_x[BACK][(y + 1) * (CHUNK_SIZE + 1) + z + 1] = idx;
+	prev_y[BACK][z + 1] = idx;
+	prev_z = idx;
+      }
+      
+      temp_prev = prev_y[FRONT];
+      prev_y[FRONT] = prev_y[BACK];
+      prev_y[BACK] = temp_prev;
+    }
+    
+    temp_prev = prev_x[FRONT];
+    prev_x[FRONT] = prev_x[BACK];
+    prev_x[BACK] = temp_prev;
+  }
+
+  update_empty_chunk_flag();
+  if(!m_empty_chunk)  
+    mesh->finish_mesh();
+
+  free(prev_x[BACK]);
+  free(prev_x[FRONT]);
+  free(prev_y[BACK]);
+  free(prev_y[FRONT]);  
+}
+
+uint8_t Chunk::get_adj_voxels(int in_x, int in_y, int in_z){
+  uint8_t adj = 0;
+  int offset = 0;
+  for(int x = in_x -1; x < in_x + 1; x++){
+    for(int y = in_y - 1; y < in_y + 1; y++){
+      for(int z = in_z - 1; z < in_z + 1; z++){
+	adj |= (is_voxel_active(x,y,z)<<offset);
+	offset++;
+      }
+    }
+  }
+  return adj;
+}
+
+bool Chunk::is_voxel_active(int x, int y, int z){
+  if(x < 0 || x >= CHUNK_SIZE ||
+     y < 0 || y >= CHUNK_SIZE ||
+     z < 0 || z >= CHUNK_SIZE)
+    return false;
+
+  return get_voxel(x,y,z)->is_active();
+}
+
+
+
+/*
 void Chunk::generate_mesh(){
   float voxel_size = 1.0/CHUNK_SIZE;
   for(int x = 0 ; x < CHUNK_SIZE; x++){
@@ -291,3 +425,4 @@ void Chunk::generate_cube(GLfloat x, GLfloat y, GLfloat z,
     mesh->add_triangle(v1, v5, v6);  
   }
 }
+*/
