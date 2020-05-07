@@ -181,21 +181,21 @@ void Chunk::generate_mesh(){
   int *temp_prev;
   
   int *prev_x[2];
-  prev_x[0] = (int *) calloc((CHUNK_SIZE + 1) * (CHUNK_SIZE + 1), sizeof(int));
-  prev_x[1] = (int *) calloc((CHUNK_SIZE + 1) * (CHUNK_SIZE + 1), sizeof(int));
+  prev_x[0] = (int *) calloc((CHUNK_SIZE + 2) * (CHUNK_SIZE + 2), sizeof(int));
+  prev_x[1] = (int *) calloc((CHUNK_SIZE + 2) * (CHUNK_SIZE + 2), sizeof(int));
   for(int i = 0 ; i < 2; i++){
-    for(int x; x < CHUNK_SIZE + 1; x++){
-      for(int y; y < CHUNK_SIZE + 1; y++){
+    for(int x; x < CHUNK_SIZE + 2; x++){
+      for(int y; y < CHUNK_SIZE + 2; y++){
 	prev_x[i][y] = -1;
       }
     }
   }
   
   int *prev_y[2];
-  prev_y[0] = (int *) calloc(CHUNK_SIZE + 1, sizeof(int));
-  prev_y[1] = (int *) calloc(CHUNK_SIZE + 1, sizeof(int));
+  prev_y[0] = (int *) calloc(CHUNK_SIZE + 2, sizeof(int));
+  prev_y[1] = (int *) calloc(CHUNK_SIZE + 2, sizeof(int));
   for(int i = 0 ; i < 2; i++){
-    for(int y = 0; y < CHUNK_SIZE + 1; y++){
+    for(int y = 0; y < CHUNK_SIZE + 2; y++){
       prev_y[i][y] = -1;
     }
   }
@@ -207,14 +207,14 @@ void Chunk::generate_mesh(){
   uint8_t adj = 0;
   const GLfloat * normal;
   
-  for(int x = 0; x < CHUNK_SIZE; x++){  
-    for(int y = 0; y < CHUNK_SIZE; y++){
-      for(int z = 0; z < CHUNK_SIZE; z++){
+  for(int x = 0; x < CHUNK_SIZE + 1; x++){  
+    for(int y = 0; y < CHUNK_SIZE + 1; y++){
+      for(int z = 0; z < CHUNK_SIZE + 1; z++){
 	adj = get_adj_voxels(x,y,z);
 	idx = -1;
 	
 	if(adj == 0 || adj == 255){                           //all active or all not active -> no vertex
-	  prev_x[BACK][(y + 1) * (CHUNK_SIZE + 1) + z + 1] = -1;
+	  prev_x[BACK][(y + 1) * (CHUNK_SIZE + 2) + z + 1] = -1;
 	  prev_y[BACK][z + 1] = -1;
 	  prev_z = -1;
 	  continue;
@@ -242,25 +242,25 @@ void Chunk::generate_mesh(){
 	if(((adj & NX_NY_NZ) != 0) != 
 	   ((adj & NX_PY_NZ) != 0)){ //Y PLANE
 	  mesh->add_triangle(idx,
-			     prev_x[FRONT][(y + 1) * (CHUNK_SIZE + 1) + z],
+			     prev_x[FRONT][(y + 1) * (CHUNK_SIZE + 2) + z],
 			     prev_z);
 	  mesh->add_triangle(idx,
-			     prev_x[FRONT][(y + 1) * (CHUNK_SIZE + 1) + z],
-			     prev_x[FRONT][(y + 1) * (CHUNK_SIZE + 1) + z + 1]);
+			     prev_x[FRONT][(y + 1) * (CHUNK_SIZE + 2) + z],
+			     prev_x[FRONT][(y + 1) * (CHUNK_SIZE + 2) + z + 1]);
 	  
 	}
 	
 	if(((adj & NX_NY_NZ) != 0) != 
 	   ((adj & NX_NY_PZ) != 0)){ //Z PLANE
 	  mesh->add_triangle(idx,
-			     prev_x[FRONT][(y + 1) * (CHUNK_SIZE + 1) + z + 1],
-			     prev_x[FRONT][y * (CHUNK_SIZE + 1) + z + 1]);
+			     prev_x[FRONT][(y + 1) * (CHUNK_SIZE + 2) + z + 1],
+			     prev_x[FRONT][y * (CHUNK_SIZE + 2) + z + 1]);
 	  mesh->add_triangle(idx,
 			     prev_y[FRONT][z + 1],
-			     prev_x[FRONT][y * (CHUNK_SIZE + 1) + z + 1]);
+			     prev_x[FRONT][y * (CHUNK_SIZE + 2) + z + 1]);
 	}
 	   
-	prev_x[BACK][(y + 1) * (CHUNK_SIZE + 1) + z + 1] = idx;
+	prev_x[BACK][(y + 1) * (CHUNK_SIZE + 2) + z + 1] = idx;
 	prev_y[BACK][z + 1] = idx;
 	prev_z = idx;
       }
@@ -288,7 +288,7 @@ void Chunk::generate_mesh(){
 uint8_t Chunk::get_adj_voxels(int in_x, int in_y, int in_z){
   uint8_t adj = 0;
   int offset = 0;
-  for(int x = in_x -1; x < in_x + 1; x++){
+  for(int x = in_x - 1; x < in_x + 1; x++){
     for(int y = in_y - 1; y < in_y + 1; y++){
       for(int z = in_z - 1; z < in_z + 1; z++){
 	adj |= (is_voxel_active(x,y,z)<<offset);
