@@ -165,7 +165,12 @@ void ChunkContainer::setup_chunk(int x_world,
 				 int z_world){
   
   Chunk* chunk = get_chunk_at(x_world, y_world, z_world); 
-  chunk->set_world_position(x_world, y_world, z_world);
-  chunk->set_unload();
   
+  glm::vec3 chunk_pos = chunk->get_world_position();
+  if(abs(chunk_pos.x - x_world) > 1 &&
+     abs(chunk_pos.y - y_world) > 1 &&
+     abs(chunk_pos.z - z_world) > 1){
+    chunk->set_world_position(x_world, y_world, z_world);
+    chunk->set_unload();
+  }
 }

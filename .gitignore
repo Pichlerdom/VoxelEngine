@@ -3,3 +3,4 @@
 /obj/*
 *#*
 valgrind*
+/bin/breaks

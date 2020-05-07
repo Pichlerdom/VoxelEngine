@@ -16,9 +16,7 @@ void ChunkManager::bind_data_src(ChunkDataSrc *src){
 }
 
 void ChunkManager::update(float dt,
-			  glm::vec3 camera_position){
-  
-  
+			  glm::vec3 camera_position){  
   update_load_list();
   
   update_setup_list();
@@ -29,7 +27,6 @@ void ChunkManager::update(float dt,
 
   update_unload_list();
   
-  handle_chunk_updates();
   update_visibility_list();
 
   if(m_force_visibility_update ||
@@ -38,7 +35,7 @@ void ChunkManager::update(float dt,
     m_force_visibility_update = false;
     m_camera_position = camera_position;
   }
-  
+  handle_chunk_updates();  
 }
 
 void ChunkManager::render(){
@@ -63,20 +60,25 @@ void ChunkManager::render(){
 }
 
 void ChunkManager::push_chunk_update(int x, int y, int z){  
-  pthread_mutex_lock(&update_mutex);
+    
+  if(abs(x - m_camera_position.x) < (VIEW_DISTANCE * 2) &&
+     abs(y - m_camera_position.y) < (VIEW_DISTANCE * 2) &&
+     abs(z - m_camera_position.z) < (VIEW_DISTANCE * 2)){
+
+    pthread_mutex_lock(&update_mutex);
+    
+    ChunkUpdate chunk_update;
   
-  ChunkUpdate chunk_update;
+    chunk_update.x = x;
+    chunk_update.y = y;
+    chunk_update.z = z;  
 
-  chunk_update.x = x;
-  chunk_update.y = y;
-  chunk_update.z = z;  
-
-  chunk_update_que.push_front(chunk_update);
-  pthread_mutex_unlock(&update_mutex);
+    chunk_update_que.push_front(chunk_update);
+    pthread_mutex_unlock(&update_mutex);
+  }    
 }
 
 void ChunkManager::handle_chunk_updates(){
-  int x,y,z;
   Chunk * chunk;
   pthread_mutex_lock(&update_mutex);
   #ifdef _DEBUG_
@@ -87,18 +89,12 @@ void ChunkManager::handle_chunk_updates(){
       !chunk_update_que.empty(); //&& i < NUM_CHUNK_UPDATES_PER_FRAME;
       i++){
     ChunkUpdate update = chunk_update_que.back();
-    x = abs(update.x - m_camera_position.x);
-    y = abs(update.y - m_camera_position.y); 
-    z = abs(update.z - m_camera_position.z);
-    if(x < (VIEW_DISTANCE * 2) &&
-       y < (VIEW_DISTANCE * 2) &&
-       z < (VIEW_DISTANCE * 2)){
-      chunk = chunk_container->get_chunk_at(update.x, update.y, update.z);
+    chunk = chunk_container->get_chunk_at((int)update.x, (int)update.y, (int)update.z);
       
-      if(chunk->is_loaded() && chunk->is_setup()){
-	chunk->update();	
-      }
+    if(chunk->is_loaded() && chunk->is_setup()){
+      chunk->update();
     }
+    
     chunk_update_que.pop_back();
   }
   pthread_mutex_unlock(&update_mutex);
@@ -143,19 +139,33 @@ void ChunkManager::update_setup_list(){
 }
 
 void ChunkManager::update_rebuild_list(){
+
   int chunks_rebuild = 0;
+  glm::mat4 chunk_model;
+  Chunk *curr_chunk;    
+  m_renderer->push_matrix(glm::translate(-(glm::vec3(VIEW_DISTANCE,
+						     VIEW_DISTANCE,
+						     0))));
+
+  
   for(int i = 0;
       i < (int) chunk_rebuild_list.size() &&
 	chunks_rebuild < NUM_ASYNC_CHUNKS_PER_FRAME; i++){
-    Chunk *curr_chunk = chunk_rebuild_list[i];
+    curr_chunk = chunk_rebuild_list[i];
     
     if(curr_chunk->is_loaded() && curr_chunk->is_setup()){
-      curr_chunk->update_mesh();
-      chunks_rebuild++;	
+      chunk_model = curr_chunk->get_transform_mat(VIEW_DISTANCE,m_camera_position);
+      m_renderer->push_matrix(chunk_model);
+      
+      if(m_renderer->in_frustum()){	  
+	curr_chunk->update_mesh();
+	chunks_rebuild++;
+      }
+      m_renderer->pop_matrix();
     }
   }
   chunk_rebuild_list.clear();
-
+  m_renderer->pop_matrix();
 }
 
 
@@ -227,8 +237,7 @@ void ChunkManager::update_render_list(){
 void ChunkManager::update_unload_list(){
   int chunks_unloaded = 0;
   for(unsigned int i = 0;
-      i < chunk_unload_list.size() &&
-	NUM_ASYNC_CHUNKS_PER_FRAME > chunks_unloaded;
+      i < chunk_unload_list.size();
       i++){
     Chunk * curr_chunk = chunk_unload_list[i];
     if(curr_chunk->should_unload()){

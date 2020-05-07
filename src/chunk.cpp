@@ -18,7 +18,8 @@ void Chunk::cleanup(){
 }
 
 void Chunk::update(){
-  m_is_setup = false;
+  if(m_is_loaded && m_is_loaded)
+    m_is_setup = false;
 }
 
 
@@ -88,7 +89,8 @@ glm::vec3 Chunk::get_render_position(){
 }
 
 void Chunk::set_unload(){
-  m_should_unload = true;
+  if(m_is_loaded)
+    m_should_unload = true;
 }
 
 bool Chunk::should_unload(){

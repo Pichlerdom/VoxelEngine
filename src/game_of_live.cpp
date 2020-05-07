@@ -150,7 +150,7 @@ void GameOfLive::reset(){
 	    did_change = true;
 	  }
 	}
-	if(did_change)
+	//if(did_change)
 	  m_chunk_mgr->push_chunk_update(x_chunk,
 					 y_chunk,
 					 z_chunk);

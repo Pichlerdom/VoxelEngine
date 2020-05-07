@@ -13,7 +13,7 @@
 
 #define CHUNK_POSITION_OFFSET 16000
 
-#define VIEW_DISTANCE 8
+#define VIEW_DISTANCE 16
 #define TIME_PER_UPDATE 200.0f
 
 class ChunkContainer{
