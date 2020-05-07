@@ -135,25 +135,21 @@ bool GameOfLive::apply_rule(uint32_t rule, int x, int y, int z){
 void GameOfLive::reset(){
   struct GOLChunk *curr_chunk;
   Voxel *curr_voxel;
-  bool did_change = false;
   for(int x_chunk = 0; x_chunk < N; x_chunk++){
     for(int y_chunk = 0; y_chunk < N; y_chunk++){
       for(int z_chunk = 0; z_chunk < N; z_chunk++){
 	curr_chunk = get_chunk_at(x_chunk,y_chunk,z_chunk);    
 
         
-	did_change = false;
 	for(int voxel_i = 0; voxel_i < CHUNK_DATA_SIZE; voxel_i++){
 	  curr_voxel = &curr_chunk->voxels[0][0][0] + voxel_i;
 	  if(curr_voxel->is_active()){
 	    curr_voxel->set_active(false);
-	    did_change = true;
 	  }
 	}
-	//if(did_change)
-	  m_chunk_mgr->push_chunk_update(x_chunk,
-					 y_chunk,
-					 z_chunk);
+	m_chunk_mgr->push_chunk_update(x_chunk,
+				       y_chunk,
+				       z_chunk);
 	
       }
     }

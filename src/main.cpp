@@ -16,8 +16,10 @@
 #define WINDOW_HEIGHT 720
 
 #define SPEED glm::vec3(5.0f)
+#define INITIAL_POSITION glm::vec3(VIEW_DISTANCE,VIEW_DISTANCE,VIEW_DISTANCE-1.0f)
 
 #define _DEBUG_
+
 
 
 EventHandler handler;
@@ -28,7 +30,7 @@ ChunkManager chunk_manager(&renderer);
 
 GameOfLive * game_of_live = new GameOfLive(&chunk_manager);
 
-glm::vec3 position(16.0f,16.0f,-1.0f);
+glm::vec3 position = INITIAL_POSITION;
 glm::vec3 light_pos(100.0f, 100.0f, 50.0f);
 
 Timer *timer_voxel = new Timer();
@@ -78,9 +80,7 @@ void update_model(){
   }
   
   if(handler.IsKeyDown(SDLK_r)){
-    position.x = 16;
-    position.y = 16;
-    position.z = -1;
+    position = INITIAL_POSITION;
     game_of_live->reset();
   }else{  
     position += axis;

@@ -41,7 +41,7 @@ void ChunkManager::update(float dt,
 void ChunkManager::render(){
   m_renderer->push_matrix(glm::translate(-(glm::vec3(VIEW_DISTANCE,
 						     VIEW_DISTANCE,
-						     0))));
+						     VIEW_DISTANCE))));
 
   glm::mat4 chunk_model;
   for (unsigned int i = 0;
@@ -145,7 +145,7 @@ void ChunkManager::update_rebuild_list(){
   Chunk *curr_chunk;    
   m_renderer->push_matrix(glm::translate(-(glm::vec3(VIEW_DISTANCE,
 						     VIEW_DISTANCE,
-						     0))));
+						     VIEW_DISTANCE))));
 
   
   for(int i = 0;
@@ -211,7 +211,7 @@ void ChunkManager::update_render_list(){
   chunk_render_list.clear();
   m_renderer->push_matrix(glm::translate(-(glm::vec3(VIEW_DISTANCE,
 						     VIEW_DISTANCE,
-						     0))));
+						     VIEW_DISTANCE))));
   glm::mat4 chunk_model;
   
   for(unsigned int i= 0; i < chunk_visibility_list.size(); i++){
