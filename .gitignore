@@ -2,3 +2,4 @@
 /bin/voxel
 /obj/*
 *#*
+/bin/valgrind*
