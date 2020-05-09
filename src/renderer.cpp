@@ -50,6 +50,9 @@ bool Renderer::init(){
     return false;
   }
 
+  SDL_SetRelativeMouseMode(SDL_TRUE);
+  SDL_CaptureMouse(SDL_TRUE);
+  
   SDL_GL_SetSwapInterval(1);
   
   glewExperimental = GL_TRUE;
@@ -119,6 +122,40 @@ void Renderer::set_matrix(){
   shader.set_normal_matrix(normal_mat);
 }
 
+void Renderer::update_view_matrix(float x, float y){
+  glm::vec3 euler;
+  glm::vec3 world_up(0.0f,-1.0f,0.0f);
+  
+  float yaw = glm::radians(x);
+  float pitch = glm::radians(y);
+  
+  euler.x = cos(yaw) * cos(pitch);
+  euler.y = sin(pitch);
+  euler.z = sin(yaw) * cos(pitch);
+
+  glm::vec3 front = glm::normalize(euler);
+  glm::vec3 right = glm::normalize(glm::cross(front, world_up));
+  glm::vec3 up = glm::normalize(glm::cross(right,front));
+
+  m_front = front;
+  m_up = up;
+  //view matrix
+  view = glm::lookAt(
+     glm::vec3(0, 0, 0), //camera position
+     front,  //look at position
+     up  //up vector
+     );
+}
+
+glm::vec3 Renderer::get_front(){
+  return m_front;
+}
+
+glm::vec3 Renderer::get_up(){
+  return m_up;
+}
+
+
 void Renderer::set_light(glm::vec3 light_pos){
   shader.use_program();
   shader.set_light( light_pos );
@@ -126,7 +163,7 @@ void Renderer::set_light(glm::vec3 light_pos){
 
 
 bool Renderer::in_frustum(){
-  glm::vec4 Pclip = projection * view * model * glm::vec4(0.0f,0.0f,2.0f,1.0f);
+  glm::vec4 Pclip = projection * view * model * glm::vec4(0.01f,0.01f,0.01f,1.0f);
   return (glm::abs(Pclip.x) < Pclip.w &&
 	  glm::abs(Pclip.y) < Pclip.w &&
 	  0 < Pclip.z &&
@@ -169,6 +206,9 @@ void Renderer::set_gl_options(){
   //setting up depth testing
   glEnable(GL_DEPTH_TEST);
   glDepthFunc(GL_LEQUAL);
+
+  glEnable(GL_CULL_FACE);
+
 }
 
 bool Renderer::set_gl_attributes(){

@@ -69,6 +69,14 @@ void EventHandler::HandleMouseMove( const SDL_Event &event )
 	events.push_back( newEvent );
 
 	mousePoint = newEvent.mouseMove.newPos;
+	
+	mousePos.x += event.motion.xrel;
+	mousePos.y += event.motion.yrel;
+	if(mousePos.y >= 90.0){
+	  mousePos.y = 90.0;
+	} else if(mousePos.y <= -90.0){
+	  mousePos.y = -90.0;
+	}
 }
 ButtonState EventHandler::GetKeyState( SDL_Keycode key ) const
 {
@@ -112,6 +120,12 @@ SDL_Point EventHandler::GetMousePoint( ) const
 {
 	return mousePoint;
 }
+
+SDL_Point EventHandler::GetMousePosition( ) const
+{
+	return mousePos;
+}
+
 void EventHandler::AddKeyboardEvent( const SDL_Event &event )
 {
 	events.push_back( CreateKeyboardEvent( event ) );

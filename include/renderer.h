@@ -12,6 +12,7 @@
 #include <GL/glew.h>
 #include <glm/glm.hpp>
 #include <SDL2/SDL.h>
+#include <math.h>
 
 #include "shader.h"
 #include "model.h"
@@ -26,6 +27,8 @@ class Renderer{
   bool set_up_shader(const std::string vertex,
 		     const std::string fragment);
 
+  void update_view_matrix(float x, float y);
+  
   void push_matrix(glm::mat4 mat);
   void pop_matrix();
 
@@ -41,10 +44,15 @@ class Renderer{
   void cleanup();
   void check_SDL_error(int line);
   
- private:
+  glm::vec3 get_front();
+  glm::vec3 get_up();
 
+private:
   uint32_t m_window_width;
   uint32_t m_window_height;
+
+  glm::vec3 m_front;
+  glm::vec3 m_up;
   
   glm::mat4 projection;
   glm::mat4 view;

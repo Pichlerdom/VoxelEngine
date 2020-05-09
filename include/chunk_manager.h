@@ -27,8 +27,9 @@ class ChunkManager{
 public:
   ChunkManager(Renderer *renderer);
   void update(float dt,
-	      glm::vec3 camera_position);
-
+	      glm::vec3 camera_position,
+	      glm::vec3 mouse_pos);
+  
   void push_chunk_update(int x, int y, int z);
   void render();
   void bind_data_src(ChunkDataSrc * src);
@@ -52,7 +53,7 @@ private:
   ChunkContainer *chunk_container;
   ChunkDataSrc *m_src;
   
-  glm::vec3 m_camera_view;
+  glm::vec3 m_mouse_pos;
   glm::vec3 m_camera_position;
   
   Renderer *m_renderer;

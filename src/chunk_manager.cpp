@@ -1,6 +1,5 @@
 #include "chunk_manager.h"
-#include <glm/gtx/string_cast.hpp>
-#define _DEBUG_
+//#define _DEBUG_
 
 ChunkManager::ChunkManager(Renderer *renderer){
   m_renderer = renderer;
@@ -16,7 +15,8 @@ void ChunkManager::bind_data_src(ChunkDataSrc *src){
 }
 
 void ChunkManager::update(float dt,
-			  glm::vec3 camera_position){  
+			  glm::vec3 camera_position,
+			  glm::vec3 mouse_pos){  
   update_load_list();
   
   update_setup_list();
@@ -30,10 +30,15 @@ void ChunkManager::update(float dt,
   update_visibility_list();
 
   if(m_force_visibility_update ||
+     mouse_pos != m_mouse_pos ||
      camera_position != m_camera_position){
+
     update_render_list();
+
     m_force_visibility_update = false;
+
     m_camera_position = camera_position;
+    m_mouse_pos = mouse_pos;
   }
   handle_chunk_updates();  
 }
@@ -181,16 +186,16 @@ void ChunkManager::update_visibility_list(){
     if(curr_chunk->should_unload()){
       chunk_unload_list.push_back(curr_chunk);
     }
-    if(!curr_chunk->is_loaded()){
+    else if(!curr_chunk->is_loaded()){
       chunk_load_list.push_back(curr_chunk);
     }
-    if(!curr_chunk->is_setup()){
+    else if(!curr_chunk->is_setup()){
       chunk_setup_list.push_back(curr_chunk);
     }
+
     if(!curr_chunk->is_mesh_updated()){
       chunk_rebuild_list.push_back(curr_chunk);
     }
-
     if (curr_chunk->should_render()){
       chunk_visibility_list.push_back(curr_chunk);
     }

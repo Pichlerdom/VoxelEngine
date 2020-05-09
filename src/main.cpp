@@ -20,9 +20,9 @@
 
 #define _DEBUG_
 
-
-
 EventHandler handler;
+float mouse_pos_x = 0;
+float mouse_pos_y = 0;
 
 Renderer renderer(WINDOW_WIDTH, WINDOW_HEIGHT);
 
@@ -40,8 +40,14 @@ double tick_rate = 1000.0/1.0;
 
 uint32_t rule = 0x00000000;
 uint64_t count = 0;
+
+
+
 void print_commands();
 void update_model();
+void handle_mouse_inputs(float dt);
+void handle_keyboard_inputs(float dt);
+
 
 void render(){
   
@@ -64,19 +70,37 @@ void update(){
   }
 }
 void update_model(){
-  glm::vec3 axis = Math::GetAxis(handler);
   
   double delta_time = timer_voxel->tick();
 
 #ifdef _DEBUG_
   printf("%.4lfms\n%.2f,%.2f,%.2f, rule:%d, ms_per_tick: %.2f\n", delta_time, position.x, position.y, position.z,rule,tick_rate);
 #endif
+
+  handle_keyboard_inputs(delta_time);
+  handle_mouse_inputs(delta_time);
+
+  chunk_manager.update(delta_time, position, glm::vec3(mouse_pos_x, mouse_pos_y, 1.0f));
+}
+
+void handle_mouse_inputs(float dt){
+  SDL_Point new_mouse_pos = handler.GetMousePosition();
+  mouse_pos_x = new_mouse_pos.x * 0.05;
+  mouse_pos_y = new_mouse_pos.y * 0.05;
+
+  printf("%.2f, %.2f\n",mouse_pos_x, mouse_pos_y);
+  renderer.update_view_matrix(mouse_pos_x, mouse_pos_y);  
+}
+
+void handle_keyboard_inputs(float dt){
+  glm::vec3 axis = Math::GetAxis(handler);
+
   if(axis != glm::vec3(0.0f,0.0f,0.0f)){
     axis = glm::normalize(axis) * SPEED;
   
-    axis.x *= ((float)delta_time)/1000.0f;
-    axis.y *= ((float)delta_time)/1000.0f;
-    axis.z *= ((float)delta_time)/1000.0f;
+    axis.x *= ((float)dt)/1000.0f;
+    axis.y *= ((float)dt)/1000.0f;
+    axis.z *= ((float)dt)/1000.0f;
   }
   
   if(handler.IsKeyDown(SDLK_r)){
@@ -85,20 +109,22 @@ void update_model(){
   }else{  
     position += axis;
   }
+
   count ++;
+
   if(count % 2 == 0){
     if(handler.IsKeyDown(SDLK_t)){
       rule+=2;
     }else if(handler.IsKeyDown(SDLK_g)){
       rule-=2;
-    }
-  
+    }  
     if(handler.IsKeyDown(SDLK_z)){
       rule+=16;
     }else if(handler.IsKeyDown(SDLK_h)){
       rule-=16;
     }
   }
+
   if(handler.IsKeyDown(SDLK_c)){
     tick_rate -= 10.0;
   }else if(handler.IsKeyDown(SDLK_v)){
@@ -110,11 +136,11 @@ void update_model(){
   }else if(handler.IsKeyDown(SDLK_x)){
     tick_rate ++;
   }
+
   if(tick_rate < 0)
     tick_rate = 1;
-  
-  chunk_manager.update(delta_time, position);
 }
+
 
 void * game_update_loop(void * args){
   double dt = 0;
@@ -133,14 +159,16 @@ void * game_update_loop(void * args){
 }
 
 int main(int argc, char* argv[]){
+  mouse_pos_x = 0;
+  mouse_pos_y = 90;
+  
   if(argc == 2){
     rule = std::stoi(argv[1]); 
   }
   //setup game thread
   pthread_t game_thread;
   pthread_create(&game_thread, NULL, game_update_loop, NULL);
-  
-  
+    
   //setup voxel engine
   if(!renderer.init())
     return -1;
