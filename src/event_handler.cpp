@@ -72,11 +72,7 @@ void EventHandler::HandleMouseMove( const SDL_Event &event )
 	
 	mousePos.x += event.motion.xrel;
 	mousePos.y += event.motion.yrel;
-	if(mousePos.y >= 90.0){
-	  mousePos.y = 90.0;
-	} else if(mousePos.y <= -90.0){
-	  mousePos.y = -90.0;
-	}
+	
 }
 ButtonState EventHandler::GetKeyState( SDL_Keycode key ) const
 {

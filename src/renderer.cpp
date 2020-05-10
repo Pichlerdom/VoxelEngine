@@ -136,9 +136,10 @@ void Renderer::update_view_matrix(float x, float y){
   glm::vec3 front = glm::normalize(euler);
   glm::vec3 right = glm::normalize(glm::cross(front, world_up));
   glm::vec3 up = glm::normalize(glm::cross(right,front));
-
+  
   m_front = front;
   m_up = up;
+  m_right = right;
   //view matrix
   view = glm::lookAt(
      glm::vec3(0, 0, 0), //camera position
@@ -155,6 +156,10 @@ glm::vec3 Renderer::get_up(){
   return m_up;
 }
 
+glm::vec3 Renderer::get_right(){
+  return m_right;
+}
+
 
 void Renderer::set_light(glm::vec3 light_pos){
   shader.use_program();
@@ -163,7 +168,7 @@ void Renderer::set_light(glm::vec3 light_pos){
 
 
 bool Renderer::in_frustum(){
-  glm::vec4 Pclip = projection * view * model * glm::vec4(0.01f,0.01f,0.01f,1.0f);
+  glm::vec4 Pclip = projection * view * model * glm::vec4(m_front * glm::vec3(3.0f), 1.0f);
   return (glm::abs(Pclip.x) < Pclip.w &&
 	  glm::abs(Pclip.y) < Pclip.w &&
 	  0 < Pclip.z &&
@@ -207,7 +212,7 @@ void Renderer::set_gl_options(){
   glEnable(GL_DEPTH_TEST);
   glDepthFunc(GL_LEQUAL);
 
-  glEnable(GL_CULL_FACE);
+  //  glEnable(GL_CULL_FACE);
 
 }
 

@@ -6,6 +6,7 @@
 
 #include <SDL2/SDL.h>
 
+
 // Event structures
 // Notes :
 // 		The struvture of the events might seem siilar to those of SLD_Event, but theere are some differences:
@@ -118,6 +119,7 @@ private:
 
   SDL_Point mousePoint;
   SDL_Point mousePos;  
+
   // Only holds key press events for this frame
   // I.E. if a button was pressed or released this frame
   // It will not contain button states that was the same in the previous event

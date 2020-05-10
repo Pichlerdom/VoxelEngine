@@ -46,6 +46,7 @@ class Renderer{
   
   glm::vec3 get_front();
   glm::vec3 get_up();
+  glm::vec3 get_right();
 
 private:
   uint32_t m_window_width;
@@ -53,6 +54,7 @@ private:
 
   glm::vec3 m_front;
   glm::vec3 m_up;
+  glm::vec3 m_right;
   
   glm::mat4 projection;
   glm::mat4 view;

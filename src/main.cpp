@@ -15,7 +15,9 @@
 #define WINDOW_WIDTH 1280
 #define WINDOW_HEIGHT 720
 
-#define SPEED glm::vec3(5.0f)
+#define MOVEMENT_SPEED 2.0f
+#define MOUSE_SENSITIVITY 0.1f
+
 #define INITIAL_POSITION glm::vec3(VIEW_DISTANCE,VIEW_DISTANCE,VIEW_DISTANCE-1.0f)
 
 #define _DEBUG_
@@ -85,31 +87,42 @@ void update_model(){
 
 void handle_mouse_inputs(float dt){
   SDL_Point new_mouse_pos = handler.GetMousePosition();
-  mouse_pos_x = new_mouse_pos.x * 0.05;
-  mouse_pos_y = new_mouse_pos.y * 0.05;
+  mouse_pos_x = - new_mouse_pos.x * MOUSE_SENSITIVITY;
+  mouse_pos_y = new_mouse_pos.y * MOUSE_SENSITIVITY;
 
-  printf("%.2f, %.2f\n",mouse_pos_x, mouse_pos_y);
+  if(mouse_pos_y >= 90.0){
+    mouse_pos_y = 89.9;
+  } else if(mouse_pos_y <= -90.0){
+    mouse_pos_y = -89.9;
+  }
+  
   renderer.update_view_matrix(mouse_pos_x, mouse_pos_y);  
 }
 
 void handle_keyboard_inputs(float dt){
-  glm::vec3 axis = Math::GetAxis(handler);
-
-  if(axis != glm::vec3(0.0f,0.0f,0.0f)){
-    axis = glm::normalize(axis) * SPEED;
-  
-    axis.x *= ((float)dt)/1000.0f;
-    axis.y *= ((float)dt)/1000.0f;
-    axis.z *= ((float)dt)/1000.0f;
-  }
-  
+    
   if(handler.IsKeyDown(SDLK_r)){
     position = INITIAL_POSITION;
     game_of_live->reset();
   }else{  
-    position += axis;
-  }
+    float delta_forward = 0;
+    float delta_right = 0;
+    
+    if(handler.IsKeyDown(SDLK_w)){
+      delta_forward = ((float)dt)/1000;
+    }else if(handler.IsKeyDown(SDLK_s)){
+      delta_forward = ((float)-dt)/1000;
+    }
 
+    if(handler.IsKeyDown(SDLK_d)){
+      delta_right = ((float)dt)/1000;
+    }else if(handler.IsKeyDown(SDLK_a)){
+      delta_right = ((float)-dt)/1000;
+    }    
+    position += renderer.get_front() * glm::vec3(delta_forward * MOVEMENT_SPEED);
+    position += renderer.get_right() * glm::vec3(delta_right * MOVEMENT_SPEED);
+  }
+  
   count ++;
 
   if(count % 2 == 0){
@@ -160,7 +173,7 @@ void * game_update_loop(void * args){
 
 int main(int argc, char* argv[]){
   mouse_pos_x = 0;
-  mouse_pos_y = 90;
+  mouse_pos_y = 0;
   
   if(argc == 2){
     rule = std::stoi(argv[1]); 
